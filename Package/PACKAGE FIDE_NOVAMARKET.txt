@@ -1,3 +1,22 @@
+-- ═══════════════════════════════════════════════════════════════════════════
+-- FIDE_NOVAMARKET_PKG
+-- ═══════════════════════════════════════════════════════════════════════════
+-- Limpieza (ver historial): existían dos familias de INSERT para varias
+-- tablas — una vieja que recibía el ID por parámetro (_INSERTAR_SP) y otra
+-- que dejaba que la secuencia lo generara (_INSERTARSEQ_SP / _APP_SP). El ID
+-- manual nunca funcionó de verdad porque el trigger BEFORE INSERT de cada
+-- tabla siempre lo sobreescribe con SEQ.NEXTVAL. Se eliminó la versión con
+-- ID manual y se dejó solo la que realmente usa NovaAPI (confirmado
+-- revisando cada route en NovaAPI/api/routes).
+--
+-- Regla del proyecto: el trigger BI_TRG de cada tabla es la única fuente de
+-- verdad para el ID (SEQ.NEXTVAL) y las columnas de auditoría (CREADO_POR,
+-- FECHA_CREACION, ACCION). Los procedimientos de este package NO deben
+-- asignar esos campos manualmente — si lo hacen, el trigger los pisa igual
+-- y solo se gasta trabajo (y, en el caso del ID, un número de secuencia)
+-- de más.
+-- ═══════════════════════════════════════════════════════════════════════════
+
 create or replace PACKAGE FIDE_NOVAMARKET_PKG AS
 
     -- 1. Función para calcular total de ventas por sucursal
@@ -85,11 +104,6 @@ create or replace PACKAGE FIDE_NOVAMARKET_PKG AS
     ) RETURN NUMBER;
 
         -- CRUD - ESTADOS
-    PROCEDURE FIDE_ESTADOS_INSERTAR_SP(
-        P_ID_ESTADO IN NUMBER,
-        P_NOMBRE_ESTADO IN VARCHAR2
-    );
-
     PROCEDURE FIDE_ESTADOS_ACTUALIZAR_SP(
         P_ID_ESTADO IN NUMBER,
         P_NOMBRE_ESTADO IN VARCHAR2
@@ -100,12 +114,6 @@ create or replace PACKAGE FIDE_NOVAMARKET_PKG AS
     );
 
     -- CRUD - PROVINCIAS
-    PROCEDURE FIDE_PROVINCIAS_INSERTAR_SP(
-        P_ID_PROVINCIA IN NUMBER,
-        P_NOMBRE_PROVINCIA IN VARCHAR2,
-        P_ID_ESTADO_FK IN NUMBER
-    );
-
     PROCEDURE FIDE_PROVINCIAS_ACTUALIZAR_SP(
         P_ID_PROVINCIA IN NUMBER,
         P_NOMBRE_PROVINCIA IN VARCHAR2,
@@ -117,13 +125,6 @@ create or replace PACKAGE FIDE_NOVAMARKET_PKG AS
     );
 
     -- CRUD - CANTONES
-    PROCEDURE FIDE_CANTONES_INSERTAR_SP(
-        P_ID_CANTON IN NUMBER,
-        P_NOMBRE_CANTON IN VARCHAR2,
-        P_ID_PROVINCIA_FK IN NUMBER,
-        P_ID_ESTADO_FK IN NUMBER
-    );
-
     PROCEDURE FIDE_CANTONES_ACTUALIZAR_SP(
         P_ID_CANTON IN NUMBER,
         P_NOMBRE_CANTON IN VARCHAR2,
@@ -136,13 +137,6 @@ create or replace PACKAGE FIDE_NOVAMARKET_PKG AS
     );
 
     -- CRUD - DISTRITOS
-    PROCEDURE FIDE_DISTRITOS_INSERTAR_SP(
-        P_ID_DISTRITO IN NUMBER,
-        P_NOMBRE_DISTRITO IN VARCHAR2,
-        P_ID_CANTON_FK IN NUMBER,
-        P_ID_ESTADO_FK IN NUMBER
-    );
-
     PROCEDURE FIDE_DISTRITOS_ACTUALIZAR_SP(
         P_ID_DISTRITO IN NUMBER,
         P_NOMBRE_DISTRITO IN VARCHAR2,
@@ -155,14 +149,6 @@ create or replace PACKAGE FIDE_NOVAMARKET_PKG AS
     );
 
     -- CRUD - DIRECCIONES
-    PROCEDURE FIDE_DIRECCIONES_INSERTAR_SP(
-        P_ID_DIRECCION IN NUMBER,
-        P_DETALLE IN VARCHAR2,
-        P_CODIGO_POSTAL IN VARCHAR2,
-        P_ID_DISTRITO_FK IN NUMBER,
-        P_ID_ESTADO_FK IN NUMBER
-    );
-
     PROCEDURE FIDE_DIRECCIONES_ACTUALIZAR_SP(
         P_ID_DIRECCION IN NUMBER,
         P_DETALLE IN VARCHAR2,
@@ -176,14 +162,6 @@ create or replace PACKAGE FIDE_NOVAMARKET_PKG AS
     );
 
     -- CRUD - PUESTOS
-    PROCEDURE FIDE_PUESTOS_INSERTAR_SP(
-        P_ID_PUESTO IN NUMBER,
-        P_NOMBRE_PUESTO IN VARCHAR2,
-        P_SALARIO_BASE IN NUMBER,
-        P_DESCRIPCION IN VARCHAR2,
-        P_ID_ESTADO_FK IN NUMBER
-    );
-
     PROCEDURE FIDE_PUESTOS_ACTUALIZAR_SP(
         P_ID_PUESTO IN NUMBER,
         P_NOMBRE_PUESTO IN VARCHAR2,
@@ -197,15 +175,6 @@ create or replace PACKAGE FIDE_NOVAMARKET_PKG AS
     );
 
     -- CRUD - SUCURSALES
-    PROCEDURE FIDE_SUCURSALES_INSERTAR_SP(
-        P_ID_SUCURSAL IN NUMBER,
-        P_NOMBRE_SUCURSAL IN VARCHAR2,
-        P_TELEFONO IN VARCHAR2,
-        P_FECHA_APERTURA IN DATE,
-        P_ID_DIRECCION_FK IN NUMBER,
-        P_ID_ESTADO_FK IN NUMBER
-    );
-
     PROCEDURE FIDE_SUCURSALES_ACTUALIZAR_SP(
         P_ID_SUCURSAL IN NUMBER,
         P_NOMBRE_SUCURSAL IN VARCHAR2,
@@ -257,48 +226,8 @@ create or replace PACKAGE FIDE_NOVAMARKET_PKG AS
         P_ID_TELEFONO IN NUMBER
     );
 
-    -- CRUD - USUARIOS
-    PROCEDURE FIDE_USUARIOS_INSERTAR_SP(
-        P_ID_USUARIO IN NUMBER,
-        P_CEDULA IN VARCHAR2,
-        P_NOMBRE IN VARCHAR2,
-        P_APELLIDO_PATERNO IN VARCHAR2,
-        P_APELLIDO_MATERNO IN VARCHAR2,
-        P_FECHA_NACIMIENTO IN DATE,
-        P_CONTRASENA IN VARCHAR2,
-        P_ID_CORREO_FK IN NUMBER,
-        P_ID_TELEFONO_FK IN NUMBER,
-        P_ID_DIRECCION_FK IN NUMBER,
-        P_ID_PUESTO_FK IN NUMBER,
-        P_ID_SUCURSAL_FK IN NUMBER,
-        P_ID_ESTADO_FK IN NUMBER,
-        P_TIPO_USUARIO IN VARCHAR2,
-        P_SALARIO IN NUMBER,
-        P_FECHA_CONTRATACION IN DATE
-    );
-
-    PROCEDURE FIDE_USUARIOS_ACTUALIZAR_SP(
-        P_ID_USUARIO IN NUMBER,
-        P_CEDULA IN VARCHAR2,
-        P_NOMBRE IN VARCHAR2,
-        P_APELLIDO_PATERNO IN VARCHAR2,
-        P_APELLIDO_MATERNO IN VARCHAR2,
-        P_FECHA_NACIMIENTO IN DATE,
-        P_CONTRASENA IN VARCHAR2,
-        P_ID_CORREO_FK IN NUMBER,
-        P_ID_TELEFONO_FK IN NUMBER,
-        P_ID_DIRECCION_FK IN NUMBER,
-        P_ID_PUESTO_FK IN NUMBER,
-        P_ID_SUCURSAL_FK IN NUMBER,
-        P_ID_ESTADO_FK IN NUMBER,
-        P_TIPO_USUARIO IN VARCHAR2,
-        P_SALARIO IN NUMBER,
-        P_FECHA_CONTRATACION IN DATE
-    );
-
-    PROCEDURE FIDE_USUARIOS_ELIMINAR_SP(
-        P_ID_USUARIO IN NUMBER
-    );
+    -- CRUD - USUARIOS: ver FIDE_USUARIOS_INSERTAR_APP_SP / _MODIFICAR_APP_SP /
+    -- _ELIMINAR_APP_SP más abajo — son las que usa NovaAPI (routes/usuarios.js).
 
     -- CRUD - PROVEEDORES
     PROCEDURE FIDE_PROVEEDORES_INSERTAR_SP(
@@ -875,8 +804,7 @@ PROCEDURE FIDE_PUESTOS_INSERTARSEQ_SP (
     P_NOMBRE_PUESTO   IN VARCHAR2,
     P_SALARIO_BASE    IN NUMBER,
     P_DESCRIPCION     IN VARCHAR2,
-    P_ID_ESTADO_FK    IN NUMBER,
-    P_CREADO_POR      IN VARCHAR2
+    P_ID_ESTADO_FK    IN NUMBER
 );
 
 PROCEDURE FIDE_PROVINCIAS_INSERTARSEQ_SP (
