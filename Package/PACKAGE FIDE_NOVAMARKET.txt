@@ -1,20 +1,13 @@
 -- ═══════════════════════════════════════════════════════════════════════════
 -- FIDE_NOVAMARKET_PKG
 -- ═══════════════════════════════════════════════════════════════════════════
--- Limpieza (ver historial): existían dos familias de INSERT para varias
--- tablas — una vieja que recibía el ID por parámetro (_INSERTAR_SP) y otra
--- que dejaba que la secuencia lo generara (_INSERTARSEQ_SP / _APP_SP). El ID
--- manual nunca funcionó de verdad porque el trigger BEFORE INSERT de cada
--- tabla siempre lo sobreescribe con SEQ.NEXTVAL. Se eliminó la versión con
--- ID manual y se dejó solo la que realmente usa NovaAPI (confirmado
--- revisando cada route en NovaAPI/api/routes).
---
--- Regla del proyecto: el trigger BI_TRG de cada tabla es la única fuente de
--- verdad para el ID (SEQ.NEXTVAL) y las columnas de auditoría (CREADO_POR,
--- FECHA_CREACION, ACCION). Los procedimientos de este package NO deben
--- asignar esos campos manualmente — si lo hacen, el trigger los pisa igual
--- y solo se gasta trabajo (y, en el caso del ID, un número de secuencia)
--- de más.
+-- Convención del package: cada tabla tiene UN solo procedimiento de INSERT,
+-- y ese procedimiento no recibe el ID ni las columnas de auditoría por
+-- parámetro. El trigger BEFORE INSERT (BI_TRG) de cada tabla es el
+-- responsable de asignar el ID (con su SEQ.NEXTVAL correspondiente) y de
+-- llenar CREADO_POR, FECHA_CREACION y ACCION. Mantener esa lógica en un
+-- solo lugar (el trigger) evita que el package y el trigger se pisen entre
+-- sí o queden desincronizados.
 -- ═══════════════════════════════════════════════════════════════════════════
 
 create or replace PACKAGE FIDE_NOVAMARKET_PKG AS
@@ -226,8 +219,8 @@ create or replace PACKAGE FIDE_NOVAMARKET_PKG AS
         P_ID_TELEFONO IN NUMBER
     );
 
-    -- CRUD - USUARIOS: ver FIDE_USUARIOS_INSERTAR_APP_SP / _MODIFICAR_APP_SP /
-    -- _ELIMINAR_APP_SP más abajo — son las que usa NovaAPI (routes/usuarios.js).
+    -- CRUD - USUARIOS: ver FIDE_USUARIOS_INSERTAR_APP_SP, _MODIFICAR_APP_SP
+    -- y _ELIMINAR_APP_SP más abajo.
 
     -- CRUD - PROVEEDORES
     PROCEDURE FIDE_PROVEEDORES_INSERTAR_SP(
@@ -841,3 +834,4 @@ PROCEDURE FIDE_DIRECCIONES_INSERTARSEQ_SP (
 );
 
 END FIDE_NOVAMARKET_PKG;
+END FIDE_NOVAMARKET_PK
