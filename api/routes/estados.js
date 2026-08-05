@@ -1,12 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const oracledb = require("oracledb");
-
-const dbConfig = {
-  user: "NOVAMARKET_",
-  password: "12345",
-  connectionString: "localhost/XEPDB1"
-};
+const dbConfig = require("../db");
 
 // ========================= LISTAR =========================
 router.get("/", async (req, res) => {

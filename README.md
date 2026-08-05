@@ -92,9 +92,7 @@ NovaMarket/
 │   │   └── usuarios.js
 │   ├── server.js                           — Entry point de la API
 │   ├── package.json
-│   ├── package-lock.json
-│   └── .gitignore
-├── .gitignore
+│   └── package-lock.json
 └── README.md
 ```
 
@@ -143,15 +141,24 @@ La API expone un router por recurso dentro de `api/routes/`:
 
 ### API (Node.js)
 
-3. Instalar dependencias y correr el servidor:
+3. Instalar dependencias:
    ```bash
    cd ../api
    npm install
-   cp .env.example .env   # agregar credenciales de tu instancia Oracle
-   node server.js
    ```
+4. Configurar la conexión a Oracle. **Por ahora la conexión está hardcodeada** en cada archivo de `api/routes/` (`user`, `password`, `connectionString`), así que editá esos valores directamente con los de tu instancia local antes de correr el servidor:
+   ```js
+   user: "NOVAMARKET_",
+   password: "12345",
+   connectionString: "localhost/XEPDB1"
+   ```
+5. Levantar el servidor:
+   ```bash
+   npm start
+   ```
+   La API queda disponible en `http://localhost:5000`.
 
-> ⚠️ Asegúrate de tener el driver de Oracle (`node-oracledb`) configurado correctamente y de completar el `.env` con las credenciales de tu instancia antes de levantar el servidor.
+> ⚠️ **Pendiente conocido:** la conexión a Oracle está repetida en los 11 archivos de rutas en vez de vivir en un único módulo (`db.js`), y las credenciales están hardcodeadas en el código en vez de en variables de entorno. Ver Roadmap.
 
 ---
 
@@ -171,7 +178,8 @@ La API expone un router por recurso dentro de `api/routes/`:
 - [x] Triggers de integridad y auditoría
 - [x] Vistas de reportes
 - [x] API REST estructurada en `api/`
-- [ ] Documentar variables de entorno (`.env.example`)
+- [ ] Centralizar la conexión a Oracle en un único módulo (`db.js`) en vez de repetirla en cada ruta
+- [ ] Mover las credenciales a variables de entorno (`.env` + `.gitignore`) en vez de hardcodearlas
 - [ ] Tests de integración para la API
 - [ ] Deploy de la API
 
